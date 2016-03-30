@@ -2,6 +2,7 @@ import kivy
 kivy.require("1.8.0")
 
 from random import randint
+import math
 import sys
 
 from kivy.properties import NumericProperty, ReferenceListProperty, BooleanProperty, ObjectProperty, ListProperty
@@ -37,12 +38,14 @@ class Background(Widget):
 class Mcnay(Widget):
     bird_image = ObjectProperty(Image())
 
-    jump_time = NumericProperty(0.3)
-    jump_height = NumericProperty(95)
+    jump_time = NumericProperty(0.1)
+    jump_height = NumericProperty(55)
 
     time_jumped = NumericProperty(0)
 
     jumping = BooleanProperty(False)
+    
+    angle = NumericProperty(0)
 
     velocity_x = NumericProperty(0)
     velocity_y = NumericProperty(0)
@@ -63,17 +66,13 @@ class Mcnay(Widget):
         self._keyboard = None
 
     def switch_to_normal(self, dt):
-        self.bird_image.source = "images/flappyup.png"
         Clock.schedule_once(self.stop_jumping, self.jump_time  * (4.0 / 5.0))
 
     def stop_jumping(self, dt):
         self.jumping = False
-        self.bird_image.source = "images/flappy.png"
-        self.velocity_y = self.normal_velocity_y
 
     def on_touch_down(self, touch):
         self.jumping = True
-        self.bird_image.source = "images/flappynormal.png"
         self.velocity_y = self.jump_height / (self.jump_time * 60.0)
         Clock.unschedule(self.stop_jumping)
         Clock.schedule_once(self.switch_to_normal, self.jump_time  / 5.0)
@@ -82,11 +81,11 @@ class Mcnay(Widget):
         self.on_touch_down(None)
 
     def update(self):
+        self.angle = math.degrees(math.atan(self.velocity_y))
+        self.velocity_y = self.velocity_y -0.3
         self.pos = Vector(*self.velocity) + self.pos
         if self.pos[1] <= 104:
-            Clock.unschedule(self.stop_jumping)
-            self.bird_image.source = "images/flappynormal.png"
-            self.pos = (self.pos[0], 104)
+             FlappyBirdGame.lose = True
 
 class Obstacle(Widget):
     gap_top = NumericProperty(0)
@@ -108,6 +107,7 @@ class Obstacle(Widget):
         self.pos = Vector(*self.velocity) + self.pos
 
 class FlappyBirdGame(Widget):
+    lose = BooleanProperty(False)
     mcnay = ObjectProperty(Mcnay())
     background = ObjectProperty(Background())
     obstacles = ListProperty([])
@@ -143,6 +143,10 @@ class FlappyBirdGame(Widget):
         self.background.update_position()
 
     def update(self, dt):
+        if self.lose == True:
+             #edit this
+             sys.exit()
+
         self.mcnay.update()
         self.background.update()
         # Loop through and update obstacles. Replace obstacles which went off the screen.
@@ -160,11 +164,11 @@ class FlappyBirdGame(Widget):
         # See if the player collides with any obstacles
         for obstacle in self.obstacles:
             if self.mcnay.collide_widget(Widget(pos=(obstacle.x, obstacle.gap_top + 20), size=(obstacle.width, obstacle.height - obstacle.gap_top))):
-                # This will be replaced later on
-                sys.exit()
+                self.lose = True
+
             if self.mcnay.collide_widget(Widget(pos=(obstacle.x, 0), size=(obstacle.width, obstacle.gap_top - obstacle.gap_size))):
-                # This will also be replaced
-                sys.exit()
+                self.lose = True
+
 
 class FlappyBirdApp(App):
 
