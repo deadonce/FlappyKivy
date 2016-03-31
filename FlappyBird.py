@@ -39,7 +39,7 @@ class Mcnay(Widget):
     bird_image = ObjectProperty(Image())
 
     jump_time = NumericProperty(0.1)
-    jump_height = NumericProperty(55)
+    jump_height = NumericProperty(50)
 
     time_jumped = NumericProperty(0)
 
